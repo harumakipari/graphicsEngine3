@@ -1,0 +1,24 @@
+{ "columns":1,
+ "image":"Boss.png",
+ "imageheight":32,
+ "imagewidth":32,
+ "margin":0,
+ "name":"Boss",
+ "spacing":0,
+ "tilecount":1,
+ "tiledversion":"1.11.0",
+ "tileheight":32,
+ "tiles":[
+        {
+         "id":0,
+         "properties":[
+                {
+                 "name":"name",
+                 "type":"string",
+                 "value":"Boss"
+                }]
+        }],
+ "tilewidth":32,
+ "type":"tileset",
+ "version":"1.10"
+}

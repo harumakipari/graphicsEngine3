@@ -1,0 +1,185 @@
+{
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1722,
+      "max": [
+        0.256822407245636,
+        0.6838017702102661,
+        0.2441708743572235
+      ],
+      "min": [
+        -0.09118921309709549,
+        0.0001515853073215112,
+        -0.17642946541309357
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 1722,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 1722,
+      "max": [
+        1.0,
+        0.9999986290931702,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -0.9997693300247192,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 1722,
+      "max": [
+        0.875,
+        1.0001074075698853
+      ],
+      "min": [
+        0.125,
+        0.0
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5125,
+      "count": 4302,
+      "max": [
+        1721
+      ],
+      "min": [
+        0
+      ],
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 20664,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 20664,
+      "byteOffset": 20664,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 27552,
+      "byteOffset": 41328,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 13776,
+      "byteOffset": 68880,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 17208,
+      "byteOffset": 82656,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 99864,
+      "uri": "phone_booth.bin"
+    }
+  ],
+  "materials": [
+    {
+      "emissiveFactor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "name": "standardSurface1",
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0.0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TANGENT": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 4,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "phone_booth",
+      "rotation": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "samplers": [
+    {
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

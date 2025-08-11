@@ -1,0 +1,6 @@
+#ifndef MODEL_RESOURCE_H
+#define MODEL_RESOURCE_H
+
+
+
+#endif // !MODEL_RESOURCE_H

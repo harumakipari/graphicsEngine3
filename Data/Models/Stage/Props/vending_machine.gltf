@@ -1,0 +1,185 @@
+{
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 2212,
+      "max": [
+        0.18334385752677917,
+        0.9648908972740173,
+        0.27338707447052
+      ],
+      "min": [
+        -0.1834210753440857,
+        0.002419166499748826,
+        -0.27338707447052
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 2212,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 2212,
+      "max": [
+        1.0,
+        0.7087687253952026,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -0.7072831392288208,
+        -1.0,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 2212,
+      "max": [
+        0.875,
+        1.0
+      ],
+      "min": [
+        0.125,
+        0.0
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5125,
+      "count": 3432,
+      "max": [
+        2211
+      ],
+      "min": [
+        0
+      ],
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 26544,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 26544,
+      "byteOffset": 26544,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 35392,
+      "byteOffset": 53088,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 17696,
+      "byteOffset": 88480,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 13728,
+      "byteOffset": 106176,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 119904,
+      "uri": "vending_machine.bin"
+    }
+  ],
+  "materials": [
+    {
+      "emissiveFactor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "name": "standardSurface1",
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0.0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TANGENT": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 4,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "vending_machine",
+      "rotation": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "samplers": [
+    {
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}
