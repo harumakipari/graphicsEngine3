@@ -69,6 +69,10 @@ void SceneRenderer::RenderOpaque(ID3D11DeviceContext* immediateContext/*, std::v
             {// 
                 Draw(immediateContext, meshComponent, worldMat, meshComponent->modelNodes, InterleavedGltfModel::RenderPass::Opaque);
             }
+            else if (meshComponent->model->mode == InterleavedGltfModel::Mode::StaticMesh)
+            {
+                DrawWithStaticBatching(immediateContext, meshComponent, worldMat, meshComponent->modelNodes, InterleavedGltfModel::RenderPass::Opaque);
+            }
 
             //  描画呼び出し
             //meshComponent->RenderOpaque(immediateContext, worldMat);
@@ -113,6 +117,11 @@ void SceneRenderer::RenderMask(ID3D11DeviceContext* immediateContext)
             {// 
                 Draw(immediateContext, meshComponent, worldMat, meshComponent->modelNodes, InterleavedGltfModel::RenderPass::Mask);
             }
+            else if (meshComponent->model->mode == InterleavedGltfModel::Mode::StaticMesh)
+            {
+                DrawWithStaticBatching(immediateContext, meshComponent, worldMat, meshComponent->modelNodes, InterleavedGltfModel::RenderPass::Mask);
+            }
+
         }
     }
 }
@@ -154,6 +163,11 @@ void SceneRenderer::RenderBlend(ID3D11DeviceContext* immediateContext)
             {// 
                 Draw(immediateContext, meshComponent, worldMat, meshComponent->modelNodes, InterleavedGltfModel::RenderPass::Blend);
             }
+            else if (meshComponent->model->mode == InterleavedGltfModel::Mode::StaticMesh)
+            {
+                DrawWithStaticBatching(immediateContext, meshComponent, worldMat, meshComponent->modelNodes, InterleavedGltfModel::RenderPass::Blend);
+            }
+
         }
     }
 }
@@ -347,26 +361,29 @@ void SceneRenderer::Draw(ID3D11DeviceContext* immediateContext, const MeshCompon
 
 void SceneRenderer::DrawWithStaticBatching(ID3D11DeviceContext* immediateContext, const MeshComponent* meshComponent, const DirectX::XMFLOAT4X4& world, const std::vector<InterleavedGltfModel::Node>& animatedNodes, InterleavedGltfModel::RenderPass pass)
 {
-#if 0
-    _ASSERT_EXPR(mode == Mode::StaticMesh, L"This function only works with static_batching data.");
+#if 1
+    _ASSERT_EXPR(meshComponent->model->mode == InterleavedGltfModel::Mode::StaticMesh, L"This function only works with static_batching data.");
+    // 各 MeshComponent の model を取り出す
+    const InterleavedGltfModel* model = meshComponent->model.get();
+    immediateContext->PSSetShaderResources(0, 1, model->materialResourceView.GetAddressOf());
 
-    immediateContext->PSSetShaderResources(0, 1, materialResourceView.GetAddressOf());
+    //immediateContext->PSSetShaderResources(0, 1, materialResourceView.GetAddressOf());
 
-    immediateContext->VSSetShader(pipeline.vertexShader ? pipeline.vertexShader.Get() : vertexShader.Get(), nullptr, 0);
-    immediateContext->PSSetShader(pipeline.pixelShader ? pipeline.pixelShader.Get() : pixelShader.Get(), nullptr, 0);
-    immediateContext->IASetInputLayout(inputLayout.Get());
-    immediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //immediateContext->VSSetShader(pipeline.vertexShader ? pipeline.vertexShader.Get() : vertexShader.Get(), nullptr, 0);
+    //immediateContext->PSSetShader(pipeline.pixelShader ? pipeline.pixelShader.Get() : pixelShader.Get(), nullptr, 0);
+    //immediateContext->IASetInputLayout(inputLayout.Get());
+    //immediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    for (const BatchMesh& batchMesh : batchMeshes)
+    for (const InterleavedGltfModel::BatchMesh& batchMesh : model->batchMeshes)
     {
-        UINT stride = sizeof(BatchMesh::Vertex);
+        UINT stride = sizeof(InterleavedGltfModel::BatchMesh::Vertex);
         UINT offset = 0;
-        immediateContext->IASetVertexBuffers(0, 1, buffers.at(batchMesh.vertexBufferView.buffer).GetAddressOf(), &stride, &offset);
+        immediateContext->IASetVertexBuffers(0, 1, model->buffers.at(batchMesh.vertexBufferView.buffer).GetAddressOf(), &stride, &offset);
 
-        PrimitiveConstants primitiveData = {};
-        primitiveData.material = batchMesh.material;
-        primitiveData.hasTangent = batchMesh.has("TANGENT");
-        primitiveData.skin = -1;
+        //PrimitiveConstants primitiveData = {};
+        primitiveCBuffer->data.material = batchMesh.material;
+        primitiveCBuffer->data.hasTangent = batchMesh.has("TANGENT");
+        primitiveCBuffer->data.skin = -1;
         const DirectX::XMFLOAT4X4 coordinateSystemTransforms[]
         {
             {//RHS Y-UP
@@ -397,7 +414,7 @@ void SceneRenderer::DrawWithStaticBatching(ID3D11DeviceContext* immediateContext
 
         float scaleFactor;
 
-        if (isModelInMeters)
+        if (model->isModelInMeters)
         {
             scaleFactor = 1.0f;//メートル単位の時
         }
@@ -405,38 +422,66 @@ void SceneRenderer::DrawWithStaticBatching(ID3D11DeviceContext* immediateContext
         {
             scaleFactor = 0.01f;//㎝単位の時
         }
-        DirectX::XMMATRIX C{ DirectX::XMLoadFloat4x4(&coordinateSystemTransforms[static_cast<int>(modelCoordinateSystem)]) * DirectX::XMMatrixScaling(scaleFactor,scaleFactor,scaleFactor) };
-        //primitiveData.world = world;
-        DirectX::XMStoreFloat4x4(&primitiveData.world, C * DirectX::XMLoadFloat4x4(&world));
-        immediateContext->UpdateSubresource(primitiveCbuffer.Get(), 0, 0, &primitiveData, 0, 0);
-        immediateContext->VSSetConstantBuffers(0, 1, primitiveCbuffer.GetAddressOf());
-        immediateContext->PSSetConstantBuffers(0, 1, primitiveCbuffer.GetAddressOf());
 
-        const Material& material = materials.at(batchMesh.material);
+        DirectX::XMMATRIX C{ DirectX::XMLoadFloat4x4(&coordinateSystemTransforms[static_cast<int>(model->modelCoordinateSystem)]) * DirectX::XMMatrixScaling(scaleFactor,scaleFactor,scaleFactor) };
+
+        DirectX::XMStoreFloat4x4(&primitiveCBuffer->data.world, C * DirectX::XMLoadFloat4x4(&world));
+        // 0番に定数バッファを送る
+        primitiveCBuffer->Activate(immediateContext, 0);
+
+        //DirectX::XMMATRIX C{ DirectX::XMLoadFloat4x4(&coordinateSystemTransforms[static_cast<int>(modelCoordinateSystem)]) * DirectX::XMMatrixScaling(scaleFactor,scaleFactor,scaleFactor) };
+        ////primitiveData.world = world;
+        //DirectX::XMStoreFloat4x4(&primitiveData.world, C * DirectX::XMLoadFloat4x4(&world));
+        //immediateContext->UpdateSubresource(primitiveCbuffer.Get(), 0, 0, &primitiveData, 0, 0);
+        //immediateContext->VSSetConstantBuffers(0, 1, primitiveCbuffer.GetAddressOf());
+        //immediateContext->PSSetConstantBuffers(0, 1, primitiveCbuffer.GetAddressOf());
+
+        //const Material& material = materials.at(batchMesh.material);
+
+        const InterleavedGltfModel::Material& material = model->materials.at(batchMesh.material);
+
+        std::string pipelineName;
+        if (material.overridePipelineName.has_value())
+        {
+            pipelineName = *material.overridePipelineName;
+        }
+        else if (meshComponent->overridePipelineName.has_value())
+        {
+            pipelineName = *meshComponent->overridePipelineName;
+        }
+        else
+        {
+            pipelineName = GetPipelineName(currentRenderPath, static_cast<MaterialAlphaMode>(material.data.alphaMode), static_cast<ModelMode>(model->mode));
+        }
+        pipeLineStateSet->BindPipeLineState(immediateContext, pipelineName);
+
 
         bool passed = false;
         switch (pass)
         {
-        case RenderPass::Opaque:
+        case InterleavedGltfModel::RenderPass::Opaque:
             if (material.data.alphaMode == 0/*OPAQUE*/)
             {
                 RenderState::BindBlendState(immediateContext, BLEND_STATE::MULTIPLY_RENDER_TARGET_NONE);
                 passed = true;
             }
             break;
-        case RenderPass::Mask:
+        case InterleavedGltfModel::RenderPass::Mask:
             if (material.data.alphaMode == 1/*MASK*/)
             {
                 RenderState::BindBlendState(immediateContext, BLEND_STATE::MULTIPLY_RENDER_TARGET_NONE);
                 passed = true;
             }
             break;
-        case RenderPass::Blend:
+        case InterleavedGltfModel::RenderPass::Blend:
             if (material.data.alphaMode == 2/*BLEND*/)
             {
                 RenderState::BindBlendState(immediateContext, BLEND_STATE::MULTIPLY_RENDER_TARGET_ALPHA);
                 passed = true;
             }
+            break;
+        case InterleavedGltfModel::RenderPass::All:
+            passed = true;
             break;
         }
         if (!passed)
@@ -453,20 +498,20 @@ void SceneRenderer::DrawWithStaticBatching(ID3D11DeviceContext* immediateContext
             material.data.occlusionTexture.index,
         };
         //RenderState::BindRasterizerState(immediateContext, RASTER_STATE::SOLID_CULL_NONE);
-        RenderState::BindRasterizerState(immediateContext, RASTERRIZER_STATE::SOLID_CULL_BACK);
+        //RenderState::BindRasterizerState(immediateContext, RASTERRIZER_STATE::SOLID_CULL_BACK);
 
         ID3D11ShaderResourceView* nullShaderResourceView{};
         std::vector<ID3D11ShaderResourceView*> shaderResourceViews(_countof(textureIndices));
         for (int textureIndex = 0; textureIndex < shaderResourceViews.size(); ++textureIndex)
         {
-            shaderResourceViews.at(textureIndex) = textureIndices[textureIndex] > -1 ? textureResourceViews.at(textures.at(textureIndices[textureIndex]).source).Get() : nullShaderResourceView;
+            shaderResourceViews.at(textureIndex) = textureIndices[textureIndex] > -1 ? model->textureResourceViews.at(model->textures.at(textureIndices[textureIndex]).source).Get() : nullShaderResourceView;
         }
         immediateContext->PSSetShaderResources(1, static_cast<UINT>(shaderResourceViews.size()), shaderResourceViews.data());
 
         if (batchMesh.indexBufferView.buffer > -1)
         {
-            immediateContext->IASetIndexBuffer(buffers.at(batchMesh.indexBufferView.buffer).Get(), batchMesh.indexBufferView.format, 0);
-            immediateContext->DrawIndexed(batchMesh.indexBufferView.sizeInBytes / _SizeofComponent(batchMesh.indexBufferView.format), 0, 0);
+            immediateContext->IASetIndexBuffer(model->buffers.at(batchMesh.indexBufferView.buffer).Get(), batchMesh.indexBufferView.format, 0);
+            immediateContext->DrawIndexed(batchMesh.indexBufferView.sizeInBytes / SizeofComponent(batchMesh.indexBufferView.format), 0, 0);
         }
         else
         {

@@ -96,7 +96,7 @@ private:
     {
         DirectX::XMFLOAT4X4 world;
 
-        DirectX::XMFLOAT4 color;
+        DirectX::XMFLOAT4 color{ 1.0f,1.0f,1.0f,1.0f };
 
         int material{ -1 };
         int hasTangent{ 0 };
