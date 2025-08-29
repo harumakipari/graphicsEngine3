@@ -521,3 +521,65 @@ void SceneRenderer::DrawWithStaticBatching(ID3D11DeviceContext* immediateContext
 
 #endif // 0
 }
+
+void SceneRenderer::CastShadowRender(ID3D11DeviceContext* immediateContext)
+{
+    Scene* currentScene = Scene::GetCurrentScene();  // 現在のシーン取得
+    if (!currentScene) return;
+    auto& allActors = currentScene->GetActorManager()->GetAllActors();
+    for (auto& actor : allActors)
+    {
+        if (!actor->rootComponent_)
+        {
+            continue;
+        }
+
+        if (!actor->isActive)
+        {// actorが存在していなかったらスキップ
+            continue;
+        }
+
+        std::vector<MeshComponent*> meshComponents;
+        actor->GetComponents<MeshComponent>(meshComponents);
+        for (const MeshComponent* meshComponent : meshComponents)
+        {
+            //  各 MeshComponent 自身の最新ワールド行列を取り出す
+            const auto& worldMat = meshComponent->GetComponentWorldTransform().ToWorldTransform();
+            //bool rendered = false;
+
+            // ConvexCollisionComponent が使用できるならそちらを優先する
+            //if (auto* convexComponent = actor->GetComponent<ConvexCollisionComponent>())
+            //{
+            //    if (convexComponent->GetActive())
+            //    {
+            //        convexComponent = dynamic_cast<ConvexCollisionComponent*>(convexComponent);
+            //        DirectX::XMFLOAT4X4 world;
+            //        DirectX::XMStoreFloat4x4(&world, DirectX::XMMatrixIdentity());
+            //        convexComponent->GetMeshComponent()->model->CastShadow(immediateContext, world, convexComponent->GetAnimatedNodes());
+
+            //        //meshComponent->model->CastShadow(immediateContext, world, convexComponent->GetAnimatedNodes());
+            //        //rendered = true;
+            //    }
+            //}
+
+            if (/*!rendered &&*/ meshComponent->IsVisible())
+            {
+                if (meshComponent->IsCastShadow())
+                {
+                    //  描画呼び出しも meshComponent ベースの行列を渡す
+                    meshComponent->CastShadow(immediateContext, worldMat);
+                }
+            }
+
+        }
+        //if (auto build = actor->GetComponent<BuildMeshComponent>())
+        //{
+        //    if (build->IsCastShadow())
+        //    {
+        //        const auto& worldMat = build->GetComponentWorldTransform().ToWorldTransform();
+        //        build->CastShadow(immediateContext, worldMat);
+        //    }
+        //}
+    }
+}
+

@@ -400,6 +400,7 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
         RenderState::BindDepthStencilState(immediateContext, DEPTH_STATE::ZT_ON_ZW_ON);
         RenderState::BindRasterizerState(immediateContext, RASTERRIZER_STATE::SOLID_CULL_NONE);
         //actorRender.CastShadowRender(immediateContext);
+        sceneRender.CastShadowRender(immediateContext);
         //gameWorld_->CastShadowRender(immediateContext);
         cascadedShadowMaps->Deactive(immediateContext);
 
@@ -548,6 +549,7 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
         RenderState::BindDepthStencilState(immediateContext, DEPTH_STATE::ZT_ON_ZW_ON);
         RenderState::BindRasterizerState(immediateContext, RASTERRIZER_STATE::SOLID_CULL_NONE);
         //actorRender.CastShadowRender(immediateContext);
+        sceneRender.CastShadowRender(immediateContext);
         //gameWorld_->CastShadowRender(immediateContext);
         cascadedShadowMaps->Deactive(immediateContext);
 
