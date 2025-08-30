@@ -2,9 +2,110 @@
 
 
 #include <memory>
-class Widget :public std::enable_shared_from_this <Widget>
-{
+#include <vector>
 
+#include "Graphics/Core/Graphics.h"
+#include "Graphics/Sprite/Sprite.h"
+
+class UIWidget :public std::enable_shared_from_this <UIWidget>
+{
+public:
+    // コンストラクタ
+    UIWidget(const std::string& name) :name_(name), active_(true) {};
+
+    virtual ~UIWidget()
+    {
+        for (auto child : children_)
+        {
+            delete child;
+        }
+    }
+
+    // ファイル設定
+    void SetSprite(const std::string& filename)
+    {
+        ID3D11Device* device = Graphics::GetDevice();
+        sprite_ = std::make_shared<Sprite>(device, filename);
+    }
+
+    // 位置の設定
+    void SetPosition(float x, float y) { x_ = x; y_ = y; }
+    // サイズの設定
+    void SetSize(float w, float h) { width_ = w; height_ = h; }
+
+    // 子Widgetを追加
+    void AddChild(UIWidget* child)
+    {
+        child->parent_ = this;
+        children_.push_back(child);
+    }
+
+    // 親子構造のGetters
+    UIWidget* GetParent() const { return parent_; }
+    const std::vector<UIWidget*>& GetChildren() const { return children_; }
+
+    // 可視性設定
+    void SetVisible(bool visible) { isVisible_ = visible; }
+    bool IsVisible() const { return isVisible_; }
+
+    // 座標取得（親の座標を加味した絶対座標）
+    float GetAbsoluteX() const
+    {
+        return parent_ ? parent_->GetAbsoluteX() + x_ : x_;
+    }
+    float GetAbsoluteY() const
+    {
+        return parent_ ? parent_->GetAbsoluteY() + y_ : y_;
+    }
+
+    virtual void Draw(ID3D11DeviceContext* immediateContext)
+    {
+        if (!isVisible_)
+        {
+            return;
+        }
+
+        sprite_->Render(immediateContext, x_, y_, width_, height_);
+
+        for (auto child : children_)
+        {
+            child->Draw(immediateContext);
+        }
+    }
+
+    // マウスのヒット判定（矩形）
+    bool HitTest(float mouseX, float mouseY) const 
+    {
+        if (!isVisible_) return false;
+        float absX = GetAbsoluteX();
+        float absY = GetAbsoluteY();
+        return 
+            (mouseX >= absX && mouseX <= absX + width_ &&
+            mouseY >= absY && mouseY <= absY + height_);
+    }
+
+    // 入力処理
+    virtual bool OnMouseDown(float mouseX, float mouseY) 
+    {
+        if (!isVisible_) return false;
+
+       
+        for (auto it = children_.rbegin(); it != children_.rend(); ++it) 
+        {
+            if ((*it)->HitTest(mouseX, mouseY)) 
+            {
+                if ((*it)->OnMouseDown(mouseX, mouseY)) 
+                {
+                    return true;
+                }
+            }
+        }
+        if (HitTest(mouseX, mouseY)) 
+        {
+            return true;
+        }
+        return false;
+    }
 
 protected:
     // 画面上の位置とサイズ（スクリーン座標系の矩形）
@@ -12,4 +113,19 @@ protected:
     float y_ = 0.0f;
     float width_ = 100.0f;
     float height_ = 30.0f;
+
+    // 子ウィジェットのリスト
+    std::vector<UIWidget*> children_;
+
+    // 親Widget（nullptrならルート）
+    UIWidget* parent_ = nullptr;
+
+    // 表示状態
+    bool isVisible_ = true;
+
+    bool active_ = true;
+
+    std::shared_ptr<Sprite> sprite_;
+
+    std::string name_;
 };
