@@ -30,7 +30,7 @@ float SunlightRadiance(float3 position, VS_OUT pin)
     positionNdc.w = 1;
     
     // ndc to view space
-    float4 positionViewSpace = mul(positionNdc, inverseProjection);
+    float4 positionViewSpace = mul(positionNdc, vinverseProjection);
     positionViewSpace = positionViewSpace / positionViewSpace.w;
     
     // Find alayer of cascaded view frustum volume
@@ -45,7 +45,7 @@ float SunlightRadiance(float3 position, VS_OUT pin)
             break;
         }
     }
-    float4 p = mul(float4(position, 1.0), viewProjection); //world to clip space
+    float4 p = mul(float4(position, 1.0), vviewProjection); //world to clip space
     p = p / p.w; // clip to ndc
     // ndc to tecture coordinate
     p.x = p.x * 0.5 + 0.5;
@@ -124,10 +124,10 @@ float main(VS_OUT pin) : SV_TARGET
 {
     const float steps = 16;
     float depth = depthTexture.Sample(pointSamplerState, pin.texcoord).x;
-    float4 position = mul(float4(pin.texcoord.x * 2.0 - 1.0, -pin.texcoord.y * 2.0 + 1.0, depth, 1.0), inverseViewProjection);
+    float4 position = mul(float4(pin.texcoord.x * 2.0 - 1.0, -pin.texcoord.y * 2.0 + 1.0, depth, 1.0), vinverseViewProjection);
     position = position / position.w; // world space
     
-    float3 rayStart = cameraPositon.xyz;
+    float3 rayStart = vcameraPositon.xyz;
     float3 rayDir = position.xyz - rayStart;
     float rayLength = length(rayDir);
     rayDir /= rayLength;

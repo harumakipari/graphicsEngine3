@@ -15,9 +15,9 @@ public:
         HRESULT hr = S_OK;
 
         D3D11_BUFFER_DESC bufferDesc{};
-        //bufferDesc.ByteWidth = (sizeof(T) + 15) & ~15;
+        bufferDesc.ByteWidth = (sizeof(T) + 15) & ~15;
         //bufferDesc.ByteWidth = (sizeof(T) + 0x0f) & ~0x0f;
-        bufferDesc.ByteWidth = sizeof(T);
+        //bufferDesc.ByteWidth = sizeof(T);
         bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 #if 0
         bufferDesc.Usage = D3D11_USAGE_DYNAMIC;

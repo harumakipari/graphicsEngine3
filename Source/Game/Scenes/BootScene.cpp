@@ -26,6 +26,7 @@ bool BootScene::Initialize(ID3D11Device* device, UINT64 width, UINT height, cons
 {
     HRESULT hr;
 
+#if 0 // 定数バッファ　
     D3D11_BUFFER_DESC bufferDesc{};
     bufferDesc.ByteWidth = sizeof(sceneConstants);
     bufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -74,6 +75,15 @@ bool BootScene::Initialize(ID3D11Device* device, UINT64 width, UINT height, cons
     _ASSERT_EXPR(SUCCEEDED(hr), hr_trace(hr));
 
     sceneConstants.time = 0;//開始時に０にしておく
+#else
+    sceneCBuffer = std::make_unique<ConstantBuffer<SceneConstants>>(device);
+    lightCBuffer = std::make_unique<ConstantBuffer<LightConstants>>(device);
+    shaderCBuffer = std::make_unique<ConstantBuffer<ShaderConstants>>(device);
+    fogCBuffer = std::make_unique<ConstantBuffer<FogConstants>>(device);
+    spriteCBuffer = std::make_unique<ConstantBuffer<SpriteConstants>>(device);
+
+    sceneCBuffer->data.time = 0;//開始時に０にしておく
+#endif // 0 // 定数バッファ　
 
     // FOG 
     framebuffers[0] = std::make_unique<FrameBuffer>(device, static_cast<uint32_t>(width), height, true);
@@ -272,20 +282,20 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
     if (camera)
     {
         ViewConstants data = camera->GetViewConstants();
-        sceneConstants.cameraPosition = data.cameraPosition;
-        sceneConstants.view = data.view;
-        sceneConstants.projection = data.projection;
+        //sceneConstants.cameraPosition = data.cameraPosition;
+        //sceneConstants.view = data.view;
+        //sceneConstants.projection = data.projection;
 
-        DirectX::XMMATRIX P = DirectX::XMLoadFloat4x4(&data.projection);
-        DirectX::XMMATRIX V = DirectX::XMLoadFloat4x4(&data.view);
-        DirectX::XMStoreFloat4x4(&sceneConstants.viewProjection, V * P);
+        //DirectX::XMMATRIX P = DirectX::XMLoadFloat4x4(&data.projection);
+        //DirectX::XMMATRIX V = DirectX::XMLoadFloat4x4(&data.view);
+        //DirectX::XMStoreFloat4x4(&sceneConstants.viewProjection, V * P);
 
         // CASCADED_SHADOW_MAPS
-        DirectX::XMStoreFloat4x4(&sceneConstants.invProjection, DirectX::XMMatrixInverse(NULL, P));
-        DirectX::XMStoreFloat4x4(&sceneConstants.invViewProjection, DirectX::XMMatrixInverse(NULL, V * P));
+        //DirectX::XMStoreFloat4x4(&sceneConstants.invProjection, DirectX::XMMatrixInverse(NULL, P));
+        //DirectX::XMStoreFloat4x4(&sceneConstants.invViewProjection, DirectX::XMMatrixInverse(NULL, V * P));
 
         // COMPUTE_PARTICLE_SYSTEM
-        DirectX::XMStoreFloat4x4(&sceneConstants.invView, DirectX::XMMatrixInverse(NULL, V));
+        //DirectX::XMStoreFloat4x4(&sceneConstants.invView, DirectX::XMMatrixInverse(NULL, V));
 #if 0
         //DirectX::XMFLOAT3 cameraPosition = camera->GetWorldPosition();
         DirectX::XMFLOAT3 cameraPosition = camera->GetComponentWorldTransform().GetTranslation();
@@ -309,6 +319,7 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
         actorRender.UpdateViewConstants(immediateContext, data);
         sceneRender.UpdateViewConstants(immediateContext, data);
     }
+#if 0 // 定数バッファ
     lightConstants.lightDirection = lightDirection;
     lightConstants.colorLight = colorLight;
     lightConstants.iblIntensity = iblIntensity;
@@ -359,7 +370,70 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
     spriteConstants.enableGlitch = 0;
     immediateContext->UpdateSubresource(constantBuffers[3].Get(), 0, 0, &spriteConstants, 0, 0);
     immediateContext->PSSetConstantBuffers(10, 1, constantBuffers[3].GetAddressOf());
+#else
+    lightCBuffer->data.lightDirection = lightDirection;
+    lightCBuffer->data.colorLight = colorLight;
+    lightCBuffer->data.iblIntensity = iblIntensity;
+    lightCBuffer->data.directionalLightEnable = static_cast<int>(directionalLightEnable);
+    lightCBuffer->data.pointLightEnable = static_cast<int>(pointLightEnable);
+    lightCBuffer->data.pointLightCount = pointLightCount;
+    for (int i = 0; i < pointLightCount; i++)
+    {
+        lightCBuffer->data.pointsLight[i].position = pointLightPosition[i];
+        lightCBuffer->data.pointsLight[i].color = pointLightColor[i];
+        lightCBuffer->data.pointsLight[i].range = pointLightRange[i];
+    }
+    //sceneConstants.lightDirection = lightDirection;
+    //sceneConstants.colorLight = colorLight;
+    //sceneConstants.iblIntensity = iblIntensity;
+    // SCREEN_SPACE_AMBIENT_OCCLUSION
+    sceneCBuffer->data.enableSSAO = enableSSAO;
+    sceneCBuffer->data.enableBloom = enableBloom;
+    sceneCBuffer->data.enableFog = enableFog;
+    sceneCBuffer->data.enableCascadedShadowMaps = enableCascadedShadowMaps;
+    sceneCBuffer->data.enableSSR = enableSSR;
+    // SCREEN_SPACE_REFLECTION
+    sceneCBuffer->data.reflectionIntensity = refrectionIntensity;
+    // FOG
+    sceneCBuffer->data.time += delta_time;
 
+    sceneCBuffer->Activate(immediateContext, 1); // slot1 にセット
+
+    //immediateContext->UpdateSubresource(constantBuffers[0].Get(), 0, 0, &sceneConstants, 0, 0);
+    //immediateContext->VSSetConstantBuffers(1, 1, constantBuffers[0].GetAddressOf());
+    //immediateContext->PSSetConstantBuffers(1, 1, constantBuffers[0].GetAddressOf());
+    //immediateContext->GSSetConstantBuffers(1, 1, constantBuffers[0].GetAddressOf());
+    //immediateContext->CSSetConstantBuffers(1, 1, constantBuffers[0].GetAddressOf());
+
+    shaderCBuffer->data.maxDistance = maxDistance;
+    shaderCBuffer->data.resolution = resolution;
+    shaderCBuffer->data.steps = steps;
+    shaderCBuffer->data.thickness = thickness;
+    sceneCBuffer->Activate(immediateContext, 1); // slot2 にセット
+    //immediateContext->UpdateSubresource(constantBuffers[1].Get(), 0, 0, &shaderConstants, 0, 0);
+    //immediateContext->PSSetConstantBuffers(2, 1, constantBuffers[1].GetAddressOf());
+
+    // slot3 は cascadedShadowMap に使用中
+
+    //immediateContext->UpdateSubresource(constantBuffers[2].Get(), 0, 0, &fogConstants, 0, 0);
+    //immediateContext->PSSetConstantBuffers(4, 1, constantBuffers[2].GetAddressOf());    
+    fogCBuffer->Activate(immediateContext, 4); // slot4 にセット
+
+    //immediateContext->UpdateSubresource(constantBuffers[4].Get(), 0, 0, &lightConstants, 0, 0);
+    //immediateContext->PSSetConstantBuffers(11, 1, constantBuffers[4].GetAddressOf());    //3 は cascadedShadowMap に使用中
+    lightCBuffer->Activate(immediateContext, 11);  // slot11 にセット
+
+    spriteCBuffer->data.elapsedTime += delta_time;
+    spriteCBuffer->data.enableGlitch = 0;
+
+    spriteCBuffer->Activate(immediateContext, 10);   // slot10 にセット
+    //immediateContext->UpdateSubresource(constantBuffers[3].Get(), 0, 0, &spriteConstants, 0, 0);
+    //immediateContext->PSSetConstantBuffers(10, 1, constantBuffers[3].GetAddressOf());
+
+
+
+
+#endif // 0 // 定数バッファ
     //titlePlayer->SwitchPS(useDeferredRendering);
     //title->SwitchPS(useDeferredRendering);
     if (!useDeferredRendering)
@@ -489,7 +563,11 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
         // SKY_MAP
         RenderState::BindDepthStencilState(immediateContext, DEPTH_STATE::ZT_OFF_ZW_OFF);
         RenderState::BindRasterizerState(immediateContext, RASTERRIZER_STATE::SOLID_CULL_NONE);
-        skyMap->Blit(immediateContext, sceneConstants.viewProjection);
+        if (camera)
+        {
+            ViewConstants data = camera->GetViewConstants();
+            skyMap->Blit(immediateContext, data.viewProjection);
+        }
         RenderState::BindDepthStencilState(immediateContext, DEPTH_STATE::ZT_ON_ZW_ON);
         RenderState::BindRasterizerState(immediateContext, RASTERRIZER_STATE::SOLID_CULL_BACK);
 
@@ -774,15 +852,24 @@ void BootScene::DrawGui()
             }
             if (enableFog && ImGui::TreeNode("Fog Settings"))
             {
-                ImGui::ColorEdit3("Fog Color", fogConstants.fogColor);
-                ImGui::SliderFloat("Intensity", &(fogConstants.fogColor[3]), 0.0f, 10.0f);
-                ImGui::SliderFloat("Density", &fogConstants.fogDensity, 0.0f, 0.05f, "%.6f");
-                ImGui::SliderFloat("Height Falloff", &fogConstants.fogHeightFalloff, 0.001f, 1.0f, "%.4f");
-                ImGui::SliderFloat("Cutoff Distance", &fogConstants.fogCutoffDistance, 0.0f, 1000.0f);
-                ImGui::SliderFloat("Ground Level", &fogConstants.groundLevel, -100.0f, 100.0f);
-                ImGui::SliderFloat("Mie Scattering", &fogConstants.mieScatteringCoef, 0.0f, 1.0f, "%.4f");
-                ImGui::SliderFloat("Time Scale", &fogConstants.timeScale, 0.0f, 1.0f, "%.4f");
-                ImGui::SliderFloat("Noise Scale", &fogConstants.noiseScale, 0.0f, 0.5f, "%.4f");
+                //ImGui::ColorEdit3("Fog Color", fogConstants.fogColor);
+                //ImGui::SliderFloat("Intensity", &(fogConstants.fogColor[3]), 0.0f, 10.0f);
+                //ImGui::SliderFloat("Density", &fogConstants.fogDensity, 0.0f, 0.05f, "%.6f");
+                //ImGui::SliderFloat("Height Falloff", &fogConstants.fogHeightFalloff, 0.001f, 1.0f, "%.4f");
+                //ImGui::SliderFloat("Cutoff Distance", &fogConstants.fogCutoffDistance, 0.0f, 1000.0f);
+                //ImGui::SliderFloat("Ground Level", &fogConstants.groundLevel, -100.0f, 100.0f);
+                //ImGui::SliderFloat("Mie Scattering", &fogConstants.mieScatteringCoef, 0.0f, 1.0f, "%.4f");
+                //ImGui::SliderFloat("Time Scale", &fogConstants.timeScale, 0.0f, 1.0f, "%.4f");
+                //ImGui::SliderFloat("Noise Scale", &fogConstants.noiseScale, 0.0f, 0.5f, "%.4f");
+                ImGui::ColorEdit3("Fog Color", fogCBuffer->data.fogColor);
+                ImGui::SliderFloat("Intensity", &(fogCBuffer->data.fogColor[3]), 0.0f, 10.0f);
+                ImGui::SliderFloat("Density", &fogCBuffer->data.fogDensity, 0.0f, 0.05f, "%.6f");
+                ImGui::SliderFloat("Height Falloff", &fogCBuffer->data.fogHeightFalloff, 0.001f, 1.0f, "%.4f");
+                ImGui::SliderFloat("Cutoff Distance", &fogCBuffer->data.fogCutoffDistance, 0.0f, 1000.0f);
+                ImGui::SliderFloat("Ground Level", &fogCBuffer->data.groundLevel, -100.0f, 100.0f);
+                ImGui::SliderFloat("Mie Scattering", &fogCBuffer->data.mieScatteringCoef, 0.0f, 1.0f, "%.4f");
+                ImGui::SliderFloat("Time Scale", &fogCBuffer->data.timeScale, 0.0f, 1.0f, "%.4f");
+                ImGui::SliderFloat("Noise Scale", &fogCBuffer->data.noiseScale, 0.0f, 0.5f, "%.4f");
                 ImGui::TreePop();
             }
 
@@ -863,9 +950,12 @@ void BootScene::DrawGui()
                 ImGui::SliderFloat("Split Scheme", &cascadedShadowMaps->splitSchemeWeight, 0.0f, 1.0f);
                 ImGui::SliderFloat("Z Mult", &cascadedShadowMaps->zMult, 1.0f, 100.0f);
                 ImGui::Checkbox("Fit To Cascade", &cascadedShadowMaps->fitToCascade);
-                ImGui::SliderFloat("Shadow Color", &shaderConstants.shadowColor, 0.0f, 1.0f);
-                ImGui::DragFloat("Depth Bias", &shaderConstants.shadowDepthBias, 0.00001f, 0.0f, 0.01f, "%.8f");
-                ImGui::Checkbox("Colorize Layer", &shaderConstants.colorizeCascadedlayer);
+                ImGui::SliderFloat("Shadow Color", &shaderCBuffer->data.shadowColor, 0.0f, 1.0f);
+                ImGui::DragFloat("Depth Bias", &shaderCBuffer->data.shadowDepthBias, 0.00001f, 0.0f, 0.01f, "%.8f");
+                ImGui::Checkbox("Colorize Layer", &shaderCBuffer->data.colorizeCascadedlayer);
+                //ImGui::SliderFloat("Shadow Color", &shaderConstants.shadowColor, 0.0f, 1.0f);
+                //ImGui::DragFloat("Depth Bias", &shaderConstants.shadowDepthBias, 0.00001f, 0.0f, 0.01f, "%.8f");
+                //ImGui::Checkbox("Colorize Layer", &shaderConstants.colorizeCascadedlayer);
             }
             ImGui::EndTabItem();
         }

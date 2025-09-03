@@ -39,7 +39,7 @@ void main(VS_OUT pin)
     
     float3 L = normalize(-lightDirection.xyz);
     float3 diffuse = color.rgb * max(0, dot(N, L));
-    float3 V = normalize(cameraPositon.xyz - pin.wPosition.xyz);
+    float3 V = normalize(vcameraPositon.xyz - pin.wPosition.xyz);
     float3 specular = pow(max(0, dot(N, normalize(V + L))), 128);
     float3 ambient = color.rgb * 0.2;
     

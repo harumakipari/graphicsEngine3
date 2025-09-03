@@ -52,7 +52,7 @@ void main(point VS_OUT input[1], inout TriangleStream<GS_OUT> output)
         GS_OUT element;
         
         //Transform to clip space
-        element.position = mul(float4(p.position, 1), viewProjection);
+        element.position = mul(float4(p.position, 1), vviewProjection);
         // Make corner position as billboard
         float2 corner;
         

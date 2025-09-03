@@ -7,7 +7,7 @@ VS_OUT main(INSTANCE_VS_IN vsIn)
     //float4x4 worldTransform = mul(world, vsIn.instance_matrix);
     row_major float4x4 worldTransform = vsIn.instance_matrix;
     
-    vsOut.position = mul(float4(vsIn.position.xyz, 1), mul(worldTransform, viewProjection));
+    vsOut.position = mul(float4(vsIn.position.xyz, 1), mul(worldTransform, vviewProjection));
     vsOut.wPosition = mul(float4(vsIn.position.xyz, 1), worldTransform);
     
     vsOut.wNormal = normalize(mul(float4(vsIn.normal.xyz, 0), worldTransform));

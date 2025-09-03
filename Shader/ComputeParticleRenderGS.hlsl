@@ -106,7 +106,7 @@ void main(point GS_IN gin[1], inout TriangleStream<PS_IN> output)
     
     //ビルボード行列生成（ビュー行列の逆行列でいい。ただし移動値はいらない）
     //TODO: InverseView行列を定数バッファに設定する。
-    float4x4 billbordMatrix = invView;
+    float4x4 billbordMatrix = vinvView;
     billbordMatrix._41_42_43 = float3(0, 0, 0);
     billbordMatrix._44 = 1.0f;
     
@@ -115,7 +115,7 @@ void main(point GS_IN gin[1], inout TriangleStream<PS_IN> output)
     float4x4 rotationMatrix = mul(billbordMatrix, MatrixRotationRollPitchYaw(particleDataBuffer[particleIndex].rotation.xyz));
     float4x4 translationMatrix = MatrixTranslation(particleDataBuffer[particleIndex].position.xyz);
     float4x4 worldMatrix = mul(mul(scaleMatrix, rotationMatrix), translationMatrix);
-    float4x4 worldViewProjectionMatrix = mul(worldMatrix, viewProjection);
+    float4x4 worldViewProjectionMatrix = mul(worldMatrix, vviewProjection);
     
     //各種情報取得
     float4 texcoord = particleDataBuffer[particleIndex].texcoord;

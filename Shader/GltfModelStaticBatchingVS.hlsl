@@ -5,7 +5,7 @@ VS_OUT main(float4 position : POSITION, float4 normal : NORMAL, float4 tangent :
     VS_OUT vout;
 
     position.w = 1;
-    vout.position = mul(position, mul(world, viewProjection));
+    vout.position = mul(position, mul(world, vviewProjection));
     vout.wPosition = mul(position, world);
 
     normal.w = 0;

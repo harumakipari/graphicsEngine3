@@ -55,7 +55,7 @@ float3 ProjectionMapping(float4 worldPosition, row_major float4x4 projectionMapp
 float4 main(VS_OUT pin) : SV_TARGET
 {
     float depth = depthTexture.Sample(sampler_states[LINEAR], pin.texcoord).r;
-    float3 worldPosition = ScreenToWorld(pin.texcoord, depth, inverseViewProjection);
+    float3 worldPosition = ScreenToWorld(pin.texcoord, depth, vinverseViewProjection);
     float3 color = sceneTexture.Sample(sampler_states[LINEAR], pin.texcoord).rgb;
     
     [unroll]

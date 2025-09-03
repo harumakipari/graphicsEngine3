@@ -32,7 +32,7 @@ VS_OUT_CSM main(float4 position : POSITION, uint instanceId : SV_INSTANCEID)
     
 #if 1
     position.w = 1;
-    vout.position = mul(position, mul(world, viewProjection));
+    vout.position = mul(position, mul(world, vviewProjection));
     vout.wPosition = mul(position, world);
 
     voutCSM.instanceId = instanceId;

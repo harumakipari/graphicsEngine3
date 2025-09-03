@@ -21,6 +21,7 @@
 #include "Graphics/Effect/EffectSystem.h"
 #include "Graphics/Core/Light.h"
 #include "Graphics/Renderer/SceneRenderer.h"
+#include "Graphics/Core/ConstantBuffer.h"
 
 #include "Game/Actors/Player/TitlePlayer.h"
 #include "Game/Actors/Stage/TitleStage.h"
@@ -32,28 +33,26 @@ class BootScene : public Scene
 {
     struct SceneConstants
     {
-        DirectX::XMFLOAT4X4 viewProjection;
-        //DirectX::XMFLOAT4 lightDirection;
-        DirectX::XMFLOAT4 cameraPosition;
-        //DirectX::XMFLOAT4 colorLight;
-        DirectX::XMFLOAT4X4 view;   // PARTICLES
-        DirectX::XMFLOAT4X4 projection;   // PARTICLES
+        //DirectX::XMFLOAT4X4 viewProjection;
+        //DirectX::XMFLOAT4 cameraPosition;
+        //DirectX::XMFLOAT4X4 view;   // PARTICLES
+        //DirectX::XMFLOAT4X4 projection;   // PARTICLES
         // CASCADED_SHADOW_MAPS
-        DirectX::XMFLOAT4X4 invProjection;
-        DirectX::XMFLOAT4X4 invViewProjection;
-        //float iblIntensity;
+        //DirectX::XMFLOAT4X4 invProjection;
+        //DirectX::XMFLOAT4X4 invViewProjection;
         bool enableSSAO;
         float reflectionIntensity;
         float time = 0.0f;
         // shader のフラグ
         int enableCascadedShadowMaps;
+
         int enableSSR;
         int enableFog;
         int enableBloom;
         float pad;
-        DirectX::XMFLOAT4X4 invView;
+        //DirectX::XMFLOAT4X4 invView;
     };
-    SceneConstants sceneConstants;
+    //SceneConstants sceneConstants;
 
     struct PointLights
     {
@@ -115,7 +114,7 @@ class BootScene : public Scene
         int pointLightCount = 1;
         PointLights pointsLight[8];
     };
-    LightConstants lightConstants = {};
+    //LightConstants lightConstants = {};
 
     struct ShaderConstants
     {
@@ -135,7 +134,7 @@ class BootScene : public Scene
         float thickness = 0.5f;// SCREEN_SPACE_REFLECTION
         float pad;
     };
-    ShaderConstants shaderConstants;
+    //ShaderConstants shaderConstants;
 
     // FOG
     struct FogConstants
@@ -156,7 +155,7 @@ class BootScene : public Scene
         float noiseScale = 0.2f;
         float pads[3];
     };
-    FogConstants fogConstants;
+    //FogConstants fogConstants;
 
     //Glitch
     struct SpriteConstants
@@ -165,9 +164,17 @@ class BootScene : public Scene
         UINT enableGlitch = true;
         float pads[2];
     };
-    SpriteConstants spriteConstants;
+    //SpriteConstants spriteConstants;
 
-    Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffers[8];
+    // ConstantBuffer クラスで管理
+    std::unique_ptr<ConstantBuffer<SceneConstants>>     sceneCBuffer;
+    std::unique_ptr <ConstantBuffer<LightConstants>>    lightCBuffer;
+    std::unique_ptr <ConstantBuffer<ShaderConstants>>   shaderCBuffer;
+    std::unique_ptr <ConstantBuffer<FogConstants>>      fogCBuffer;
+    std::unique_ptr <ConstantBuffer<SpriteConstants>>   spriteCBuffer;
+
+
+    //Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffers[8];
 
     //DirectX::XMFLOAT4 lightDirection{ -0.75f, -0.64f, -0.4f, 0.0f };
     DirectX::XMFLOAT4 lightDirection{ -0.75f, -0.581f, -0.4f, 0.0f };

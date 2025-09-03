@@ -163,11 +163,11 @@ float3 CalculatedCascadedShadowColor(VS_OUT pin)
 
     float4 positionNdc = CalculatedPositionNDC(pin);
     // ndc to view space
-    float4 positionViewSpace = mul(positionNdc, inverseProjection);
+    float4 positionViewSpace = mul(positionNdc, vinverseProjection);
     positionViewSpace = positionViewSpace / positionViewSpace.w;
 
     // ndc to world space
-    float4 positionWorldSpace = mul(positionNdc, inverseViewProjection);
+    float4 positionWorldSpace = mul(positionNdc, vinverseViewProjection);
     positionWorldSpace = positionWorldSpace / positionWorldSpace.w;
 
     // Apply cascaded shadow mapping
@@ -236,7 +236,7 @@ float3 CalculatedSSRColor(VS_OUT pin)
 #if 0
     float3 incident = normalize(position);
 #else
-    float3 incident = normalize(position.xyz - cameraPositon.xyz);
+    float3 incident = normalize(position.xyz - vcameraPositon.xyz);
 #endif
     float3 reflection = normalize(reflect(incident, normal.xyz));
 
@@ -249,13 +249,13 @@ float3 CalculatedSSRColor(VS_OUT pin)
     }
 
     //float4 startFrag = mul(startWorld, projection); // from view to clipSpace
-    float4 startFrag = mul(startWorld, viewProjection); // from world to clipSpace
+    float4 startFrag = mul(startWorld, vviewProjection); // from world to clipSpace
     startFrag /= startFrag.w; //from clipSpave to ndc
     startFrag.xy = NdcToUv(startFrag.xy); // from uv to fragment/pixel coordinate
     startFrag.xy *= dimensions;
     
     //float4 endFrag = mul(endWorld, projection); //from world to clipSpace
-    float4 endFrag = mul(endWorld, viewProjection); //from world to clipSpace
+    float4 endFrag = mul(endWorld, vviewProjection); //from world to clipSpace
     endFrag /= endFrag.w; //from clipSpace to ndc
     endFrag.xy = NdcToUv(endFrag.xy); //from ndc to uv
     endFrag.xy *= dimensions;
@@ -298,7 +298,7 @@ float3 CalculatedSSRColor(VS_OUT pin)
         positionTo = positionTexture.Sample(linearBorderWhiteSamplerState, uv.xy); //viewSpace
 #else
         positionTo = positionTexture.Sample(linearBorderWhiteSamplerState, uv.xy); // worldSpace
-        float4 positionToClip = mul(float4(positionTo.xyz, 1.0), viewProjection);
+        float4 positionToClip = mul(float4(positionTo.xyz, 1.0), vviewProjection);
         positionToClip /= positionToClip.w;
 #endif   
         search1 = lerp((frag.y - startFrag.y) / deltaY, (frag.x - startFrag.x) / deltaX, useX);
@@ -346,7 +346,7 @@ float3 CalculatedSSRColor(VS_OUT pin)
         uv.xy = frag / dimensions;
         
         positionTo = positionTexture.Sample(linearBorderWhiteSamplerState, uv.xy); //viewSpace
-        float4 positionToClip = mul(float4(positionTo.xyz, 1.0), viewProjection);
+        float4 positionToClip = mul(float4(positionTo.xyz, 1.0), vviewProjection);
         positionToClip /= positionToClip.w;
         
         // PerspectiveCorrect Interpolation
@@ -420,11 +420,11 @@ float CalculatedSSAOColor(VS_OUT pin)
         samplePosition = position.xyz + samplePosition * radius;
         
         //float4 intersection = mul(float4(samplePosition, 1.0), projection); // from view to clip-space
-        float4 intersection = mul(float4(samplePosition, 1.0), viewProjection); // from world to clip-space
+        float4 intersection = mul(float4(samplePosition, 1.0), vviewProjection); // from world to clip-space
         intersection /= intersection.w; // from clip-space to ndc
         intersection.z = depthTexture.SampleLevel(linearBorderWhiteSamplerState, NdcToUv(intersection.xy), 0).x;
         //intersection = mul(intersection, inverseProjection); // from ndc to view-space
-        intersection = mul(intersection, inverseViewProjection); // from ndc to world-space
+        intersection = mul(intersection, vinverseViewProjection); // from ndc to world-space
         intersection /= intersection.w; // perspective divide
 		
         float3 v = intersection.xyz - position.xyz;
@@ -510,11 +510,11 @@ float4 main(VS_OUT pin) : SV_TARGET
     positionNdc.w = 1;
     
     // ndc to view space
-    float4 positionViewSpace = mul(positionNdc, inverseProjection);
+    float4 positionViewSpace = mul(positionNdc, vinverseProjection);
     positionViewSpace = positionViewSpace / positionViewSpace.w;
     
     // ndc to world space
-    float4 positionWorldSpace = mul(positionNdc, inverseViewProjection);
+    float4 positionWorldSpace = mul(positionNdc, vinverseViewProjection);
     positionWorldSpace = positionWorldSpace / positionWorldSpace.w;
     
     uint2 dimensions;

@@ -2,25 +2,23 @@
 #define CONSTANTS_INCLUDE
 cbuffer SCENE_CONSTANT_BUFFER : register(b1)
 {
-    row_major float4x4 viewProjection;
-    //float4 lightDirection;
-    float4 cameraPositon;
-    //float4 colorLight; //w colorPower
-    row_major float4x4 view;
-    row_major float4x4 projection;
-    row_major float4x4 inverseProjection;
-    row_major float4x4 inverseViewProjection;
-    //float iblIntensity;
+    //row_major float4x4 viewProjection;
+    //float4 cameraPositon;
+    //row_major float4x4 view;
+    //row_major float4x4 projection;
+    //row_major float4x4 inverseProjection;
+    //row_major float4x4 inverseViewProjection;
     bool enableSSAO;
     float reflectionIntensity;
     float time;
     // shader ‚Ìƒtƒ‰ƒO
     bool enableCascadedShadowMaps;
+    
     bool enableSSR;
     bool enableFog;
     bool enableBloom;
     float pad;
-    row_major float4x4 invView;
+    //row_major float4x4 invView;
 }
 
 cbuffer SHADER_CONSTANT_BUFFER : register(b2)

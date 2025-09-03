@@ -113,7 +113,7 @@ void main( uint3 dispatchThreadId : SV_DispatchThreadID )
     }
         
     //深度ソート値算出
-    header.depth = mul(float4(data.position.xyz, 1), viewProjection).w;
+    header.depth = mul(float4(data.position.xyz, 1), vviewProjection).w;
 
     //更新情報を格納
     particleHeaderBuffer[headerIndex] = header;
