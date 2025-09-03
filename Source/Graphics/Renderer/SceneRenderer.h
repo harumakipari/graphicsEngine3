@@ -44,37 +44,11 @@ public:
 
     void RenderBlend(ID3D11DeviceContext* immediateContext);
 
-    void CastShadowRender(ID3D11DeviceContext* immediateContext, std::vector<std::shared_ptr<Actor>> allActors)
-    {
-        for (auto actor : allActors)
-        {
-            if (!actor->rootComponent_)
-            {
-                continue;
-            }
-
-            if (!actor->isActive)
-            {// actorが存在していなかったらスキップ
-                continue;
-            }
-
-            // actor に付属している全ての meshComponent を取り出す
-            std::vector<MeshComponent*> meshComponents;
-            actor->GetComponents<MeshComponent>(meshComponents);
-
-            for (const MeshComponent* meshComponent : meshComponents)
-            {
-                if (!meshComponent->IsVisible())
-                { // 描画フラグが false ならスキップ
-                    continue;
-                }
-                const auto& worldMat = meshComponent->GetComponentWorldTransform().ToWorldTransform();
-                meshComponent->CastShadow(immediateContext, worldMat);
-            }
-        }
-    }
-
     void CastShadowRender(ID3D11DeviceContext* immediateContext);
+
+    void CastShadow(ID3D11DeviceContext* immediateContext, const MeshComponent* meshComponent, const DirectX::XMFLOAT4X4& world, const std::vector<InterleavedGltfModel::Node>& animatedNodes, InterleavedGltfModel::RenderPass pass);
+
+    void CastShadowWithStaticBatching(ID3D11DeviceContext* immediateContext, const MeshComponent* meshComponent, const DirectX::XMFLOAT4X4& world, const std::vector<InterleavedGltfModel::Node>& animatedNodes);
 
     void Draw(ID3D11DeviceContext* immediateContext, const MeshComponent* meshComponent, const DirectX::XMFLOAT4X4& world, const std::vector<InterleavedGltfModel::Node>& animatedNodes, InterleavedGltfModel::RenderPass pass);
 

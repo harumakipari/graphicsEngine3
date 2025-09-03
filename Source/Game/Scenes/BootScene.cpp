@@ -20,6 +20,8 @@
 #include "Widgets/Events/EventSystem.h"
 #include "Widgets/TitleUIFactory.h"
 
+
+
 bool BootScene::Initialize(ID3D11Device* device, UINT64 width, UINT height, const std::unordered_map<std::string, std::string>& props)
 {
     HRESULT hr;
@@ -116,34 +118,55 @@ bool BootScene::Initialize(ID3D11Device* device, UINT64 width, UINT height, cons
 
 void BootScene::Start()
 {
-    TitleUIFactory::Create(this);
+    //TitleUIFactory::Create(this);
 
-    auto titleButtonObj = objectManager.FindGameObject("TitleButton");
-    auto titleButton = titleButtonObj->GetComponent<Button>();
-    titleButton->AddOnClickEvent([&]()
-        {
-            //titlePlayer->PlayAnimation("Rotation", false);
-            titlePlayer->OnPushStart();
-            mainCameraActor->OnClick();
-        });
+    //auto titleButtonObj = objectManager.FindGameObject("TitleButton");
+    //auto titleButton = titleButtonObj->GetComponent<Button>();
+    //titleButton->AddOnClickEvent([&]()
+    //    {
+    //        //titlePlayer->PlayAnimation("Rotation", false);
+    //        titlePlayer->OnPushStart();
+    //        mainCameraActor->OnClick();
+    //    });
 
-    auto backButtonObj = objectManager.FindGameObject("BackToTitle");
-    auto backButton = backButtonObj->GetComponent<Button>();
-    backButton->AddOnClickEvent([&]()
-        {
-            titlePlayer->OnPushBackToTitle();
-            title->OnPushBackToTitle();
-        });
+    //auto backButtonObj = objectManager.FindGameObject("BackToTitle");
+    //auto backButton = backButtonObj->GetComponent<Button>();
+    //backButton->AddOnClickEvent([&]()
+    //    {
+    //        titlePlayer->OnPushBackToTitle();
+    //        title->OnPushBackToTitle();
+    //    });
 
-    //タイトルBGM
-    UIFactory::SetObjectManager(&objectManager);
-    AudioSource* titleBgm = UIFactory::Create("TitleBGM")->AddComponent<AudioSource>(L"./Data/Sound/BGM/title.wav");
-    titleBgm->SetVolume(0.5f);
-    titleBgm->Play(XAUDIO2_LOOP_INFINITE);
+    ////タイトルBGM
+    //UIFactory::SetObjectManager(&objectManager);
+    //AudioSource* titleBgm = UIFactory::Create("TitleBGM")->AddComponent<AudioSource>(L"./Data/Sound/BGM/title.wav");
+    //titleBgm->SetVolume(0.5f);
+    //titleBgm->Play(XAUDIO2_LOOP_INFINITE);
+
+
+
+    uiRoot.root = std::make_unique<UIWidget>("canvas");
+
+    auto button = std::make_unique<UIButton>("button");
+    button->SetSprite(L"./Data/Textures/UI/start_button.png");
+    button->SetPosition(100, 100);
+    button->SetSize(100, 100);
+
+    uiRoot.root->AddChild(std::move(button));
+
 }
 
 void BootScene::Update(ID3D11DeviceContext* immediate_context, float deltaTime)
 {
+    //DirectX::XMFLOAT2 mousePos = { 0.0f,0.0f };
+    //if (InputSystem::GetInputState("MouseLeft", InputStateMask::None))
+    {
+    }
+    float mousePosX = static_cast<float>(InputSystem::GetMousePositionX());
+    float mousePosY = static_cast<float>(InputSystem::GetMousePositionY());
+
+    uiRoot.OnClick(mousePosX, mousePosY);
+
     //ActorManager::Update(deltaTime);
     EventSystem::Update(deltaTime);//追加
     objectManager.Update(deltaTime);//追加
@@ -250,7 +273,7 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
     {
         ViewConstants data = camera->GetViewConstants();
         sceneConstants.cameraPosition = data.cameraPosition;
-        sceneConstants.view =data.view;
+        sceneConstants.view = data.view;
         sceneConstants.projection = data.projection;
 
         DirectX::XMMATRIX P = DirectX::XMLoadFloat4x4(&data.projection);
@@ -400,6 +423,7 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
         RenderState::BindDepthStencilState(immediateContext, DEPTH_STATE::ZT_ON_ZW_ON);
         RenderState::BindRasterizerState(immediateContext, RASTERRIZER_STATE::SOLID_CULL_NONE);
         //actorRender.CastShadowRender(immediateContext);
+        sceneRender.currentRenderPath = RenderPath::Shadow;
         sceneRender.CastShadowRender(immediateContext);
         //gameWorld_->CastShadowRender(immediateContext);
         cascadedShadowMaps->Deactive(immediateContext);
@@ -549,6 +573,7 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
         RenderState::BindDepthStencilState(immediateContext, DEPTH_STATE::ZT_ON_ZW_ON);
         RenderState::BindRasterizerState(immediateContext, RASTERRIZER_STATE::SOLID_CULL_NONE);
         //actorRender.CastShadowRender(immediateContext);
+        sceneRender.currentRenderPath = RenderPath::Shadow;
         sceneRender.CastShadowRender(immediateContext);
         //gameWorld_->CastShadowRender(immediateContext);
         cascadedShadowMaps->Deactive(immediateContext);
@@ -623,6 +648,7 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
         RenderState::BindRasterizerState(immediateContext, RASTERRIZER_STATE::SOLID_CULL_NONE);
         RenderState::BindDepthStencilState(immediateContext, DEPTH_STATE::ZT_OFF_ZW_OFF);
         objectManager.Draw(immediateContext);
+        uiRoot.Draw(immediateContext);
     }
 }
 

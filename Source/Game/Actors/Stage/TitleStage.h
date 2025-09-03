@@ -38,10 +38,10 @@ public:
         titleLogo->SetRelativeEulerRotationDirect({ 0.0f,-9.0f,0.0f });
         titleLogo->SetIsVisible(false);
 
-        build = this->NewSceneComponent<StaticMeshComponent>("buildComponent", "empty");
-        build->SetModel("./Data/Models/Title/title_bill.gltf");
-        build->model->modelCoordinateSystem = InterleavedGltfModel::CoordinateSystem::RH_Y_UP;
-        build->SetRelativeScaleDirect({ -1.0f,1.0f,-1.0f });
+        //build = this->NewSceneComponent<StaticMeshComponent>("buildComponent", "empty");
+        //build->SetModel("./Data/Models/Title/title_bill.gltf");
+        //build->model->modelCoordinateSystem = InterleavedGltfModel::CoordinateSystem::RH_Y_UP;
+        //build->SetRelativeScaleDirect({ -1.0f,1.0f,-1.0f });
 
         //trafficLight = this->NewSceneComponent<SkeltalMeshComponent>("trafficLight", "empty");
         trafficLight = this->NewSceneComponent<StaticMeshComponent>("trafficLight", "empty");

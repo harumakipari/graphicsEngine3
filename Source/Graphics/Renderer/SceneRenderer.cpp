@@ -172,6 +172,53 @@ void SceneRenderer::RenderBlend(ID3D11DeviceContext* immediateContext)
     }
 }
 
+void SceneRenderer::CastShadowRender(ID3D11DeviceContext* immediateContext)
+{
+    Scene* currentScene = Scene::GetCurrentScene();  // 現在のシーン取得
+    if (!currentScene) return;
+    auto& allActors = currentScene->GetActorManager()->GetAllActors();
+
+    for (auto actor : allActors)
+    {
+        if (!actor->rootComponent_)
+        {
+            continue;
+        }
+
+        if (!actor->isActive)
+        {// actorが存在していなかったらスキップ
+            continue;
+        }
+
+        // actor に付属している全ての meshComponent を取り出す
+        std::vector<MeshComponent*> meshComponents;
+        actor->GetComponents<MeshComponent>(meshComponents);
+
+        for (const MeshComponent* meshComponent : meshComponents)
+        {
+            if (!meshComponent->IsVisible())
+            { // 描画フラグが false ならスキップ
+                continue;
+            }
+            // 各 MeshComponent 自身の最新ワールド行列を取り出す
+            const auto& worldMat = meshComponent->GetComponentWorldTransform().ToWorldTransform();
+            // 各 MeshComponent の model を取り出す
+            const InterleavedGltfModel* model = meshComponent->model.get();
+
+            if (meshComponent->model->mode == InterleavedGltfModel::Mode::SkeltalMesh)
+            {// 
+                CastShadow(immediateContext, meshComponent, worldMat, meshComponent->modelNodes, InterleavedGltfModel::RenderPass::Blend);
+            }
+            else if (meshComponent->model->mode == InterleavedGltfModel::Mode::StaticMesh)
+            {
+                //DrawWithStaticBatching(immediateContext, meshComponent, worldMat, meshComponent->modelNodes, InterleavedGltfModel::RenderPass::Blend);
+            }
+
+        }
+    }
+}
+
+
 void SceneRenderer::Draw(ID3D11DeviceContext* immediateContext, const MeshComponent* meshComponent, const DirectX::XMFLOAT4X4& world, const std::vector<InterleavedGltfModel::Node>& animatedNodes, InterleavedGltfModel::RenderPass pass)
 {
     // 各 MeshComponent の model を取り出す
@@ -522,64 +569,169 @@ void SceneRenderer::DrawWithStaticBatching(ID3D11DeviceContext* immediateContext
 #endif // 0
 }
 
-void SceneRenderer::CastShadowRender(ID3D11DeviceContext* immediateContext)
+void SceneRenderer::CastShadow(ID3D11DeviceContext* immediateContext, const MeshComponent* meshComponent, const DirectX::XMFLOAT4X4& world, const std::vector<InterleavedGltfModel::Node>& animatedNodes, InterleavedGltfModel::RenderPass pass)
 {
-    Scene* currentScene = Scene::GetCurrentScene();  // 現在のシーン取得
-    if (!currentScene) return;
-    auto& allActors = currentScene->GetActorManager()->GetAllActors();
-    for (auto& actor : allActors)
-    {
-        if (!actor->rootComponent_)
+    const InterleavedGltfModel* model = meshComponent->model.get();
+    _ASSERT_EXPR(model != nullptr, L"meshComponent->model is null!");
+    const std::vector<InterleavedGltfModel::Node>& nodes{ animatedNodes.size() > 0 ? animatedNodes : meshComponent->modelNodes };
+    immediateContext->PSSetShaderResources(0, 1, model->materialResourceView.GetAddressOf());
+     //CASCADED_SHADOW_MAPS
+
+    //immediateContext->VSSetShader(vertexShaderCSM.Get(), nullptr, 0);
+    //immediateContext->GSSetShader(geometryShaderCSM.Get(), nullptr, 0);
+
+    //Microsoft::WRL::ComPtr <ID3D11PixelShader> nullPixelShader{ NULL };
+    //immediateContext->PSSetShader(nullPixelShader.Get()/*SHADOW*/, nullptr, 0);
+
+    //immediateContext->IASetInputLayout(inputLayout.Get());
+    //immediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    std::function<void(int)> traverse = [&](int nodeIndex)->void {
+        const InterleavedGltfModel::Node& node = nodes.at(nodeIndex);
+        if (node.skin > -1)
         {
-            continue;
-        }
-
-        if (!actor->isActive)
-        {// actorが存在していなかったらスキップ
-            continue;
-        }
-
-        std::vector<MeshComponent*> meshComponents;
-        actor->GetComponents<MeshComponent>(meshComponents);
-        for (const MeshComponent* meshComponent : meshComponents)
-        {
-            //  各 MeshComponent 自身の最新ワールド行列を取り出す
-            const auto& worldMat = meshComponent->GetComponentWorldTransform().ToWorldTransform();
-            //bool rendered = false;
-
-            // ConvexCollisionComponent が使用できるならそちらを優先する
-            //if (auto* convexComponent = actor->GetComponent<ConvexCollisionComponent>())
-            //{
-            //    if (convexComponent->GetActive())
-            //    {
-            //        convexComponent = dynamic_cast<ConvexCollisionComponent*>(convexComponent);
-            //        DirectX::XMFLOAT4X4 world;
-            //        DirectX::XMStoreFloat4x4(&world, DirectX::XMMatrixIdentity());
-            //        convexComponent->GetMeshComponent()->model->CastShadow(immediateContext, world, convexComponent->GetAnimatedNodes());
-
-            //        //meshComponent->model->CastShadow(immediateContext, world, convexComponent->GetAnimatedNodes());
-            //        //rendered = true;
-            //    }
-            //}
-
-            if (/*!rendered &&*/ meshComponent->IsVisible())
+            const InterleavedGltfModel::Skin& skin = model->skins.at(node.skin);
+            _ASSERT_EXPR(skin.joints.size() <= PRIMITIVE_MAX_JOINTS, L"The size of the joint array is insufficient, please expand it.");
+            for (size_t jointIndex = 0; jointIndex < skin.joints.size(); ++jointIndex)
             {
-                if (meshComponent->IsCastShadow())
+                DirectX::XMStoreFloat4x4(&primitiveJointCBuffer->data.matrices[jointIndex],
+                    DirectX::XMLoadFloat4x4(&skin.inverseBindMatrices.at(jointIndex)) *
+                    DirectX::XMLoadFloat4x4(&animatedNodes.at(skin.joints.at(jointIndex)).globalTransform) *
+                    DirectX::XMMatrixInverse(NULL, DirectX::XMLoadFloat4x4(&node.globalTransform))
+                );
+            }
+            // 2番に定数バッファを送る
+            primitiveJointCBuffer->Activate(immediateContext, 2);
+        }
+        if (node.mesh > -1)
+        {
+            const InterleavedGltfModel::Mesh& mesh = model->meshes.at(node.mesh);
+            for (const InterleavedGltfModel::Mesh::Primitive& primitive : mesh.primitives)
+            {
+                UINT stride = sizeof(InterleavedGltfModel::Mesh::Vertex);
+                UINT offset = 0;
+                immediateContext->IASetVertexBuffers(0, 1, model->buffers.at(primitive.vertexBufferView.buffer).GetAddressOf(), &stride, &offset);
+
+                primitiveCBuffer->data.material = primitive.material;
+                primitiveCBuffer->data.hasTangent = primitive.has("TANGENT");
+                primitiveCBuffer->data.skin = node.skin;
+                primitiveCBuffer->data.color = { model->cpuColor.x,model->cpuColor.y,model->cpuColor.z,model->alpha };
+                primitiveCBuffer->data.emission = model->emission;
+                primitiveCBuffer->data.disolveFactor = model->disolveFactor;
+
+                //座標系の変換を行う
+                const DirectX::XMFLOAT4X4 coordinateSystemTransforms[]
                 {
-                    //  描画呼び出しも meshComponent ベースの行列を渡す
-                    meshComponent->CastShadow(immediateContext, worldMat);
+                    {//RHS Y-UP
+                        -1,0,0,0,
+                         0,1,0,0,
+                         0,0,1,0,
+                         0,0,0,1,
+                    },
+                    {//LHS Y-UP
+                        1,0,0,0,
+                        0,1,0,0,
+                        0,0,1,0,
+                        0,0,0,1,
+                    },
+                    {//RHS Z-UP
+                        -1,0, 0,0,
+                         0,0,-1,0,
+                         0,1, 0,0,
+                         0,0, 0,1,
+                    },
+                    {//LHS Z-UP
+                        1,0,0,0,
+                        0,0,1,0,
+                        0,1,0,0,
+                        0,0,0,1,
+                    },
+                };
+
+                float scaleFactor;
+
+                if (model->isModelInMeters)
+                {
+                    scaleFactor = 1.0f;//メートル単位の時
+                }
+                else
+                {
+                    scaleFactor = 0.01f;//㎝単位の時
+                }
+                DirectX::XMMATRIX C{ DirectX::XMLoadFloat4x4(&coordinateSystemTransforms[static_cast<int>(model->modelCoordinateSystem)]) * DirectX::XMMatrixScaling(scaleFactor,scaleFactor,scaleFactor) };
+
+                DirectX::XMStoreFloat4x4(&primitiveCBuffer->data.world, DirectX::XMLoadFloat4x4(&node.globalTransform) * C * DirectX::XMLoadFloat4x4(&world));
+                // 0番に定数バッファを送る
+                primitiveCBuffer->Activate(immediateContext, 0);
+                //int materialIndex = primitive.GetCurrentMaterialIndex();
+
+                //const Material& material = materials[materialIndex];
+                const InterleavedGltfModel::Material& material = model->materials.at(primitive.material);
+                const int textureIndices[] =
+                {
+                    material.data.pbrMetallicRoughness.basecolorTexture.index,
+                    material.data.pbrMetallicRoughness.metallicRoughnessTexture.index,
+                    material.data.normalTexture.index,
+                    material.data.emissiveTexture.index,
+                    material.data.occlusionTexture.index,
+                };
+
+
+                std::string pipelineName;
+                if (material.overridePipelineName.has_value())
+                {
+                    pipelineName = *material.overridePipelineName;
+                }
+                else if (meshComponent->overridePipelineName.has_value())
+                {
+                    pipelineName = *meshComponent->overridePipelineName;
+                }
+                else
+                {
+                    pipelineName = GetPipelineName(currentRenderPath, static_cast<MaterialAlphaMode>(material.data.alphaMode), static_cast<ModelMode>(model->mode));
+                }
+                pipeLineStateSet->BindPipeLineState(immediateContext, pipelineName);
+
+
+
+                ID3D11ShaderResourceView* nullShaderResourceView = {};
+                std::vector<ID3D11ShaderResourceView*> shaderResourceViews(_countof(textureIndices));
+                for (int textureIndex = 0; textureIndex < shaderResourceViews.size(); ++textureIndex)
+                {
+                    shaderResourceViews.at(textureIndex) = textureIndices[textureIndex] > -1 ? model->textureResourceViews.at(model->textures.at(textureIndices[textureIndex]).source).Get() : nullShaderResourceView;
+                }
+                immediateContext->PSSetShaderResources(1, static_cast<UINT>(shaderResourceViews.size()), shaderResourceViews.data());
+
+                if (primitive.indexBufferView.buffer > -1)
+                {
+                    // INTERLEAVED_GLTF_MODEL
+                    immediateContext->IASetIndexBuffer(model->buffers.at(primitive.indexBufferView.buffer).Get(), primitive.indexBufferView.format, 0);
+                    immediateContext->DrawIndexedInstanced(primitive.indexBufferView.sizeInBytes / SizeofComponent(primitive.indexBufferView.format), 4, 0, 0, 0);
+                }
+                else
+                {
+                    // INTERLEAVED_GLTF_MODEL
+                    //immediateContext->Draw(primitive.vertexBufferView.sizeInBytes / primitive.vertexBufferView.strideInBytes, 0);
+                    immediateContext->DrawIndexedInstanced(primitive.vertexBufferView.sizeInBytes / primitive.vertexBufferView.strideInBytes, 4, 0, 0, 0);
                 }
             }
-
         }
-        //if (auto build = actor->GetComponent<BuildMeshComponent>())
-        //{
-        //    if (build->IsCastShadow())
-        //    {
-        //        const auto& worldMat = build->GetComponentWorldTransform().ToWorldTransform();
-        //        build->CastShadow(immediateContext, worldMat);
-        //    }
-        //}
+        for (std::vector<int>::value_type childIndex : node.children)
+        {
+            traverse(childIndex);
+        }
+        };
+    for (std::vector<int>::value_type nodeIndex : model->scenes.at(model->defaultScene).nodes)
+    {
+        traverse(nodeIndex);
     }
+
+    immediateContext->VSSetShader(NULL, NULL, 0);
+    immediateContext->GSSetShader(NULL, NULL, 0);
+    immediateContext->PSSetShader(NULL, NULL, 0);
 }
 
+void SceneRenderer::CastShadowWithStaticBatching(ID3D11DeviceContext* immediateContext, const MeshComponent* meshComponent, const DirectX::XMFLOAT4X4& world, const std::vector<InterleavedGltfModel::Node>& animatedNodes)
+{
+
+}

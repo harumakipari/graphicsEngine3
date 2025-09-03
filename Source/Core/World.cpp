@@ -32,7 +32,7 @@ void World::Render(ID3D11DeviceContext* immediateContext)
 // ‰e‚Ì•`‰æˆ—
 void World::CastShadowRender(ID3D11DeviceContext* immediateContext)
 {
-    renderer.CastShadowRender(immediateContext, allActors_);
+    //renderer.CastShadowRender(immediateContext, allActors_);
 }
 
 

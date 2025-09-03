@@ -26,6 +26,7 @@
 #include "Game/Actors/Stage/TitleStage.h"
 #include "Game/Actors/Camera/TitleCamera.h"
 
+#include "UI/Widgets/Widget.h"
 
 class BootScene : public Scene
 {
@@ -212,6 +213,8 @@ class BootScene : public Scene
     Light light;
 
     SIZE framebufferDimensions;
+
+    UIRoot uiRoot;
 public:
     bool Initialize(ID3D11Device* device, UINT64 width, UINT height, const std::unordered_map<std::string, std::string>& props) override;
 
