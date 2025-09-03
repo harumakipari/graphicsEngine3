@@ -33,26 +33,16 @@ class BootScene : public Scene
 {
     struct SceneConstants
     {
-        //DirectX::XMFLOAT4X4 viewProjection;
-        //DirectX::XMFLOAT4 cameraPosition;
-        //DirectX::XMFLOAT4X4 view;   // PARTICLES
-        //DirectX::XMFLOAT4X4 projection;   // PARTICLES
-        // CASCADED_SHADOW_MAPS
-        //DirectX::XMFLOAT4X4 invProjection;
-        //DirectX::XMFLOAT4X4 invViewProjection;
         bool enableSSAO;
         float reflectionIntensity;
         float time = 0.0f;
         // shader ‚Ìƒtƒ‰ƒO
         int enableCascadedShadowMaps;
-
         int enableSSR;
         int enableFog;
         int enableBloom;
         float pad;
-        //DirectX::XMFLOAT4X4 invView;
     };
-    //SceneConstants sceneConstants;
 
     struct PointLights
     {

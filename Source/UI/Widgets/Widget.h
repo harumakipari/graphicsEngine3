@@ -114,11 +114,17 @@ public:
         }
         if (HitTest(mouseX, mouseY))
         {
-            //HandleClick();
+            HandleClick();
             return true;
         }
         return false;
     }
+
+    virtual bool OnMouseMove(float mouseX, float mouseY)
+    {
+
+    }
+
 
 protected:
     // 画面上の位置とサイズ（スクリーン座標系の矩形）
@@ -150,6 +156,11 @@ protected:
 class UIButton :public UIWidget
 {
 public:
+    enum class State
+    {
+        Normal, Hovered, Pressed
+    };
+
     UIButton(const std::string& name) :UIWidget(name) {}
 
     std::function<void()> onClick;
@@ -158,14 +169,20 @@ public:
     {
         if (!IsVisible()) return;
 
+        DirectX::XMFLOAT4 color = { 1.0f,1.0f,1.0f,1.0f };
+        if (state_ == State::Hovered)
+        {
+            color.w = 0.5f;
+        }
         if (sprite_)
         {
-            sprite_->Render(immediateContext, GetAbsoluteX(), GetAbsoluteY(), width_, height_);
+            sprite_->Render(immediateContext, GetAbsoluteX(), GetAbsoluteY(), width_, height_, color.x, color.y, color.z, color.w, 0.0f);
         }
 
         for (auto& child : GetChildren())
             child->Draw(immediateContext);
     }
+
 
 protected:
     void HandleClick()override
@@ -175,6 +192,8 @@ protected:
             onClick();
         }
     }
+
+    State state_ = State::Normal;
 };
 
 class UIRoot

@@ -24,7 +24,7 @@
 
 bool BootScene::Initialize(ID3D11Device* device, UINT64 width, UINT height, const std::unordered_map<std::string, std::string>& props)
 {
-    HRESULT hr;
+    //HRESULT hr;
 
 #if 0 // 定数バッファ　
     D3D11_BUFFER_DESC bufferDesc{};
@@ -161,6 +161,10 @@ void BootScene::Start()
     button->SetSprite(L"./Data/Textures/UI/start_button.png");
     button->SetPosition(100, 100);
     button->SetSize(100, 100);
+    button->onClick = ([&]()
+        {
+            button->SetSize(200, 200);
+        });
 
     uiRoot.root->AddChild(std::move(button));
 

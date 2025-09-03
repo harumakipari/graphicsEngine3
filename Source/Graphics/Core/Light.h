@@ -52,6 +52,30 @@ struct LightProbes
 };
 
 
+//class LightConstants
+//{
+//    DirectX::XMFLOAT4 lightDirection;
+//    DirectX::XMFLOAT4 colorLight;
+//    float iblIntensity;
+//    int directionalLightEnable = 1; // ïΩçsåıåπÇÃ on / off
+//    int pointLightEnable = 1;
+//    int pointLightCount = 1;
+//    PointLights pointsLight[8];
+//};
+class LightManager
+{
+public:
+    LightManager(ID3D11DeviceContext* device)
+    {
+
+    }
+
+
+
+private:
+
+};
+
 class Light
 {
 public:

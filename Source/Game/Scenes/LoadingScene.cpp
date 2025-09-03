@@ -143,7 +143,7 @@ void LoadingScene::Update(ID3D11DeviceContext* immediate_context, float delta_ti
     shaderToy.iTime += delta_time;
     shaderToy.iResolution.x = Graphics::GetScreenWidth();
     shaderToy.iResolution.y = Graphics::GetScreenHeight();
-    //if (InputSystem::GetInputState("MouseLeft", InputStateMask::None))
+    if (InputSystem::GetInputState("MouseLeft", InputStateMask::None))
     {
         //shaderToy.iMouse.x = static_cast<float>(InputSystem::GetMousePositionX());
         //shaderToy.iMouse.y = static_cast<float>(InputSystem::GetMousePositionY());
