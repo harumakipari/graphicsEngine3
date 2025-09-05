@@ -409,11 +409,11 @@ void BootScene::Render(ID3D11DeviceContext* immediateContext, float delta_time)
     //immediateContext->GSSetConstantBuffers(1, 1, constantBuffers[0].GetAddressOf());
     //immediateContext->CSSetConstantBuffers(1, 1, constantBuffers[0].GetAddressOf());
 
-    shaderCBuffer->data.maxDistance = maxDistance;
+    shaderCBuffer->data.maxDistance = 20;
     shaderCBuffer->data.resolution = resolution;
     shaderCBuffer->data.steps = steps;
     shaderCBuffer->data.thickness = thickness;
-    sceneCBuffer->Activate(immediateContext, 1); // slot2 にセット
+    shaderCBuffer->Activate(immediateContext, 12); // slot2 にセット
     //immediateContext->UpdateSubresource(constantBuffers[1].Get(), 0, 0, &shaderConstants, 0, 0);
     //immediateContext->PSSetConstantBuffers(2, 1, constantBuffers[1].GetAddressOf());
 
@@ -957,6 +957,7 @@ void BootScene::DrawGui()
                 ImGui::SliderFloat("Shadow Color", &shaderCBuffer->data.shadowColor, 0.0f, 1.0f);
                 ImGui::DragFloat("Depth Bias", &shaderCBuffer->data.shadowDepthBias, 0.00001f, 0.0f, 0.01f, "%.8f");
                 ImGui::Checkbox("Colorize Layer", &shaderCBuffer->data.colorizeCascadedlayer);
+                //ImGui::DragInt("Colorize Layer", &shaderCBuffer->data.colorizeCascadedlayer);
                 //ImGui::SliderFloat("Shadow Color", &shaderConstants.shadowColor, 0.0f, 1.0f);
                 //ImGui::DragFloat("Depth Bias", &shaderConstants.shadowDepthBias, 0.00001f, 0.0f, 0.01f, "%.8f");
                 //ImGui::Checkbox("Colorize Layer", &shaderConstants.colorizeCascadedlayer);

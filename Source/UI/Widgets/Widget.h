@@ -122,7 +122,7 @@ public:
 
     virtual bool OnMouseMove(float mouseX, float mouseY)
     {
-
+        return false;
     }
 
 

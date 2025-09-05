@@ -145,7 +145,7 @@ public:
     };
 
     // ƒm[ƒh‚ğæ“¾‚·‚éŠÖ”
-    const std::vector<Node>& GetNodes() const  { return nodes; }
+    const std::vector<Node>& GetNodes() const { return nodes; }
 
 private:
     std::vector<Node> nodes;
@@ -608,6 +608,7 @@ private:
     // INTERLEAVED_GLTF_MODEL
     void FetchAndBatchMeshes(ID3D11Device* device, const tinygltf::Model& gltf_model);
 
+public:
     // CascadedShadowMaps
     Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShaderCSM;
     Microsoft::WRL::ComPtr<ID3D11GeometryShader> geometryShaderCSM;

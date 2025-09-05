@@ -21,7 +21,7 @@ cbuffer SCENE_CONSTANT_BUFFER : register(b1)
     //row_major float4x4 invView;
 }
 
-cbuffer SHADER_CONSTANT_BUFFER : register(b2)
+cbuffer SHADER_CONSTANT_BUFFER : register(b12)
 {
     //‹P“x
     float luminanceThreshold;

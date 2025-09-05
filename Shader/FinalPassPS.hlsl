@@ -154,12 +154,12 @@ float4 CalculatedPositionNDC(VS_OUT pin)
     return positionNdc;
 }
 
-float3 CalculatedCascadedShadowColor(VS_OUT pin)
+float CalculatedCascadedShadowFactor(VS_OUT pin)
 {
     // CASCADED_SHADOW_MAPS
-    float4 sampledColor = colorTexture.Sample(linearBorderBlackSamplerState, pin.texcoord);
-    float3 sampleColor = sampledColor.rgb;
-    float sampleAlpha = sampledColor.a;
+    //float4 sampledColor = colorTexture.Sample(linearBorderBlackSamplerState, pin.texcoord);
+    //float3 sampleColor = sampledColor.rgb;
+    //float sampleAlpha = sampledColor.a;
 
     float4 positionNdc = CalculatedPositionNDC(pin);
     // ndc to view space
@@ -195,6 +195,7 @@ float3 CalculatedCascadedShadowColor(VS_OUT pin)
         
         shadowFactor = cascadedShadowMaps.SampleCmpLevelZero(comparisonSamplerstate, float3(positionLightSpace.xy, cascadeIndex), positionLightSpace.z - shadowDepthBias).x;
         
+        return shadowFactor;
         float3 layerColor = 1;
 #if 1
         if (colorizeCascadedLayer)
@@ -212,9 +213,10 @@ float3 CalculatedCascadedShadowColor(VS_OUT pin)
         //color *= lerp(shadowColor, 1.0, shadowFactor) * layerColor;
         //color *= float4(lerp(shadowColor, 1.0, shadowFactor) * layerColor, color.a);
         
-        sampleColor *= lerp(shadowColor, 1.0, shadowFactor) * layerColor;
+        //sampleColor *= lerp(shadowColor, 1.0, shadowFactor) * layerColor;
     }
-    return sampleColor;
+    return shadowFactor;
+    //return sampleColor;
 }
 
 
@@ -500,6 +502,7 @@ float4 main(VS_OUT pin) : SV_TARGET
     float4 color = colorTexture.Sample(linearBorderBlackSamplerState, pin.texcoord);
     float alpha = color.a;
     
+    
     float depthNdc = depthTexture.Sample(linearBorderBlackSamplerState, pin.texcoord).x;
     
     float4 positionNdc;
@@ -535,11 +538,45 @@ float4 main(VS_OUT pin) : SV_TARGET
     }
 
     // CASCADED_SHADOW_MAPS
-    float3 cascadedShadowMapColor = CalculatedCascadedShadowColor(pin);
-    if (enableCascadedShadowMaps)
+    float shadowFactor = CalculatedCascadedShadowFactor(pin);
+    
+    // Apply cascaded shadow mapping
+    // Find alayer of cascaded view frustum volume
+    float depthViewSpace = positionViewSpace.z;
+    int cascadeIndex = -1;
+    for (uint layer = 0; layer < 4; ++layer)
     {
-        color.rgb += cascadedShadowMapColor;
+        float distance = cascadedPlaneDistances[layer];
+        if (distance > depthViewSpace)
+        {
+            cascadeIndex = layer;
+            break;
+        }
     }
+    if (cascadeIndex > -1)
+    {
+        float3 layerColor = 1;
+#if 1
+        if (colorizeCascadedLayer)
+        {
+            const float3 layerColors[4] =
+            {
+                { 1, 0, 0 },
+                { 0, 1, 0 },
+                { 0, 0, 1 },
+                { 1, 1, 0 },
+            };
+            layerColor = layerColors[cascadeIndex];
+        }
+#endif
+        color.rgb *= lerp(shadowColor, 1.0, shadowFactor) * layerColor;
+    }
+    
+    //float3 cascadedShadowMapColor = CalculatedCascadedShadowColor(pin);
+    //if (enableCascadedShadowMaps)
+    //{
+    //    color.rgb += cascadedShadowMapColor;
+    //}
     
     // FOG
     if (enableFog)
